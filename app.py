@@ -5,9 +5,10 @@ import matplotlib.pyplot as plt
 import time
 import base64
 from PIL import Image
+import plotly.express as px
 
 st.set_page_config(
-    page_title="Huna ai",
+    page_title="Huna AI",
     page_icon="🔬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -16,9 +17,9 @@ st.set_page_config(
         'Report a bug': "https://www.hunaai.com/bug",
         'About': "# This is a header. This is an *extremely* cool app!"})
 
-image = Image.open("huna.png")
+image = Image.open("tagline.png")
 
-st.image(image, use_column_width=True)
+st.image(image, width=200, use_column_width=False)
 st.title("Plataforma de rastreamento de câncer da Huna")
 st.text("A Huna fornece soluções acessíveis baseadas em IA para detecção precoce do câncer.")
 
@@ -58,25 +59,70 @@ def discarded_data():
     }
 
     df1 = pd.DataFrame(data)
-    df1 = df1[::-1].reset_index(drop=True)
-    colors = sns.color_palette("YlOrRd", len(df1))
-    bar_colors = [colors[i] for i in range(len(df1))]
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.barh(df1['Etapa'], df1['Tamanho'], color=bar_colors)
-    for i, v in enumerate(df1['Tamanho']):
-        ax.text(v + 5, i, str(v), color='black', va='center')
+    #df1 = df1[::-1].reset_index(drop=True)
 
-    ax.set_xlabel('Tamanho do Dataset')
-    ax.set_ylabel('Etapas de Limpeza de Dados')
-    #ax.set_title('Tamanho do Dataset Após Cada Etapa de Limpeza de Dados')
+    fig = px.bar(
+        df1,
+        x='Tamanho',
+        y='Etapa',
+        orientation='h',
+        text='Tamanho',
+        title="Tamanho do Dataset Após Cada Etapa de Limpeza de Dados",
+        labels={'Tamanho': 'Tamanho do Dataset', 'Etapa': 'Etapas de Limpeza de Dados'},
+        color='Etapa',
+        color_discrete_map={
+            'Dataset Inicial': 'red',
+            'Após filtro de idade': 'orange',
+            'Após remover valores ausentes em NEUTRÓFILOS': 'yellow',
+            'Após remover valores ausentes em ERITRÓCITOS': 'green',
+            'Após remover valores ausentes em LINFÓCITOS': 'purple',
+            'Após remover duplicados': 'blue'
+        }
+    )
+    fig.update_layout(height=500, width=1500)
+    fig.update_traces(textposition='outside')
 
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.tick_params(left=False, bottom=False)
+    st.plotly_chart(fig)
 
-    st.pyplot(fig)
+
+def distr_data():
+    st.subheader('Ranking final')
+    st.write("Estratificação por risco das pacientes. "
+             "O gráfico a seguir mostra a distribuição dos dados pelo grupo de risco.")
+
+    data = {
+        'Risco': ['ALTO', 'MODERADO', 'TÍPICO', 'BAIXO'],
+        'Tamanho': [216, 630, 970, 136]
+    }
+
+    color_map = {
+        'ALTO': 'red',
+        'MODERADO': 'yellow',
+        'TÍPICO': 'blue',
+        'BAIXO': 'lightblue'
+    }
+
+    df1 = pd.DataFrame(data)
+
+    fig = px.bar(
+        df1,
+        x='Risco',
+        y='Tamanho',
+        color='Risco',
+        color_discrete_map=color_map,
+        labels={'Tamanho': 'Número de Pacientes'},
+        title="Distribuição de Pacientes por Grupo de Risco"
+    )
+
+    fig.update_layout(
+        xaxis_title="Grupo de Risco",
+        yaxis_title="Número de Pacientes",
+        showlegend=False,
+        height=500,
+        width=1000,
+    )
+
+    st.plotly_chart(fig)
 
 
 def login():
@@ -135,6 +181,7 @@ def main():
                 st.dataframe(filtered_data)
                 st.write("Caso deseje baixar os dados rankeados:")
                 download_file("final_medsenior_rankeado_cliente_final.xlsx", "Baixar dados rankeados")
+                distr_data()
 
             elif confirm_inference == "Não":
                 st.session_state.uploaded_data = None
