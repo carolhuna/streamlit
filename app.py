@@ -6,6 +6,7 @@ import time
 import base64
 from PIL import Image
 import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(
     page_title="Huna AI",
@@ -17,11 +18,14 @@ st.set_page_config(
         'Report a bug': "https://www.hunaai.com/bug",
         'About': "# This is a header. This is an *extremely* cool app!"})
 
-image = Image.open("tagline.png")
+topo = Image.open("topo.png")
+st.image(topo, width=1500, use_column_width=False)
 
-st.image(image, width=200, use_column_width=False)
+image = Image.open("tagline.png")
+st.image(image, width=150, use_column_width=False)
+
 st.title("Plataforma de rastreamento de câncer da Huna")
-st.text("A Huna fornece soluções acessíveis baseadas em IA para detecção precoce do câncer.")
+st.markdown("A Huna fornece soluções acessíveis baseadas em IA para detecção precoce do câncer.")
 
 def download_file(file_path, name):
     with open(file_path, "rb") as file:
@@ -55,33 +59,40 @@ def discarded_data():
             'Após remover valores ausentes em LINFÓCITOS',
             'Após remover duplicados'
         ],
-        'Tamanho': [1955, 1954, 1952, 1952, 1952, 1952]
+        'Tamanho': [1955, 1900, 1500, 1400, 1000, 900]
     }
 
     df1 = pd.DataFrame(data)
-    #df1 = df1[::-1].reset_index(drop=True)
 
-    fig = px.bar(
-        df1,
-        x='Tamanho',
-        y='Etapa',
-        orientation='h',
-        text='Tamanho',
+    color_map = {
+        'Dataset Inicial': '#f2e3a7',
+        'Após filtro de idade': '#ebc77c',
+        'Após remover valores ausentes em NEUTRÓFILOS': '#e7a25c',
+        'Após remover valores ausentes em ERITRÓCITOS': '#e3744b',
+        'Após remover valores ausentes em LINFÓCITOS': '#d14039',
+        'Após remover duplicados': '#aa1b34'
+    }
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Funnel(
+        y=df1['Etapa'],
+        x=df1['Tamanho'],
+        marker=dict(
+            color=[color_map[etapa] for etapa in df1['Etapa']],
+            line=dict(width=1, color='#f2e3a7')
+        )
+    ))
+
+    fig.update_layout(
         title="Tamanho do Dataset Após Cada Etapa de Limpeza de Dados",
-        labels={'Tamanho': 'Tamanho do Dataset', 'Etapa': 'Etapas de Limpeza de Dados'},
-        color='Etapa',
-        color_discrete_map={
-            'Dataset Inicial': 'red',
-            'Após filtro de idade': 'orange',
-            'Após remover valores ausentes em NEUTRÓFILOS': 'yellow',
-            'Após remover valores ausentes em ERITRÓCITOS': 'green',
-            'Após remover valores ausentes em LINFÓCITOS': 'purple',
-            'Após remover duplicados': 'blue'
-        }
+        height=500,
+        width=1000,
+        yaxis_title="Etapas de Limpeza de Dados",
+        xaxis_title="Tamanho do Dataset",
+        funnelmode="stack"
     )
-    fig.update_layout(height=500, width=1500)
-    fig.update_traces(textposition='outside')
-
+    fig.update_traces(marker_line_color='#f2e3a7', marker_line_width=1)
     st.plotly_chart(fig)
 
 
@@ -96,16 +107,14 @@ def distr_data():
     }
 
     color_map = {
-        'ALTO': 'red',
-        'MODERADO': 'yellow',
-        'TÍPICO': 'blue',
-        'BAIXO': 'lightblue'
+        'ALTO': '#ea4335',
+        'MODERADO': '#fbbc04',
+        'TÍPICO': '#3c78d8',
+        'BAIXO': '#a4c2f4'
     }
-
-    df1 = pd.DataFrame(data)
-
+    df2 = pd.DataFrame(data)
     fig = px.bar(
-        df1,
+        df2,
         x='Risco',
         y='Tamanho',
         color='Risco',
@@ -114,13 +123,71 @@ def distr_data():
         title="Distribuição de Pacientes por Grupo de Risco"
     )
 
+    fig.update_layout(height=500, width=1000)
+    fig.update_traces(textposition='outside')
+
+    st.plotly_chart(fig)
+
+def perc_data():
+    data = {
+        'Risco': ['ALTO', 'MODERADO', 'TIPICO', 'BAIXO'],
+        '% da população': [11.1, 32.3, 49.7, 7.0],
+    }
+
+    df3 = pd.DataFrame(data)
+
+    color_map = {
+        'ALTO': '#ea4335',
+        'MODERADO': '#fbbc04',
+        'TIPICO': '#3c78d8',
+        'BAIXO': '#a4c2f4'
+    }
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Bar(
+        y=['% da população'],
+        x=[df3.loc[df3['Risco'] == 'ALTO', '% da população'].values[0]],
+        name='ALTO',
+        orientation='h',
+        marker=dict(color=color_map['ALTO']),
+        text=f"{df3.loc[df3['Risco'] == 'ALTO', '% da população'].values[0]}%"
+    ))
+    fig.add_trace(go.Bar(
+        y=['% da população'],
+        x=[df3.loc[df3['Risco'] == 'MODERADO', '% da população'].values[0]],
+        name='MODERADO',
+        orientation='h',
+        marker=dict(color=color_map['MODERADO']),
+        text=f"{df3.loc[df3['Risco'] == 'MODERADO', '% da população'].values[0]}%"
+    ))
+    fig.add_trace(go.Bar(
+        y=['% da população'],
+        x=[df3.loc[df3['Risco'] == 'TIPICO', '% da população'].values[0]],
+        name='TIPICO',
+        orientation='h',
+        marker=dict(color=color_map['TIPICO']),
+        text=f"{df3.loc[df3['Risco'] == 'TIPICO', '% da população'].values[0]}%"
+    ))
+    fig.add_trace(go.Bar(
+        y=['% da população'],
+        x=[df3.loc[df3['Risco'] == 'BAIXO', '% da população'].values[0]],
+        name='BAIXO',
+        orientation='h',
+        marker=dict(color=color_map['BAIXO']),
+        text=f"{df3.loc[df3['Risco'] == 'BAIXO', '% da população'].values[0]}%"
+    ))
     fig.update_layout(
-        xaxis_title="Grupo de Risco",
-        yaxis_title="Número de Pacientes",
-        showlegend=False,
-        height=500,
+        barmode='stack',
+        showlegend=True,
+        height=300,
         width=1000,
+        xaxis_title='Valor',
+        yaxis_title='Categoria',
+        title='Distribuição de Pacientes por Grupo de Risco',
     )
+
+    fig.update_traces(textposition='inside')
 
     st.plotly_chart(fig)
 
@@ -142,10 +209,10 @@ def login():
 
 def main():
     st.subheader("Upload de Dataset")
-    st.text("Faça o upload dos dados de acordo com esse template:")
+    st.markdown("Faça o upload dos dados de acordo com esse template:")
     st.page_link("https://docs.google.com/spreadsheets/d/1ibIFINcDmMcy4H-68_9WzWkFbY1-8mcqiLQmotre-B0/edit?usp=sharing",
                  label="Template", icon="1️⃣")
-    st.text("Consulte o Guia de Dados para obter mais detalhes:")
+    st.markdown("Consulte o Guia de Dados para obter mais detalhes:")
     st.page_link("https://docs.google.com/document/d/1MzKQbJtei3azss6x3hppbS4jwN8PwK-PFTs6Cf_6ZsA/edit?usp=sharing",
                  label="Guia de Dados", icon="2️⃣")
 
@@ -182,6 +249,7 @@ def main():
                 st.write("Caso deseje baixar os dados rankeados:")
                 download_file("final_medsenior_rankeado_cliente_final.xlsx", "Baixar dados rankeados")
                 distr_data()
+                perc_data()
 
             elif confirm_inference == "Não":
                 st.session_state.uploaded_data = None
