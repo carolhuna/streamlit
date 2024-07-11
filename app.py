@@ -16,7 +16,7 @@ st.set_page_config(
     menu_items={
         'Get Help': 'https://www.hunaai.com/help',
         'Report a bug': "https://www.hunaai.com/bug",
-        'About': "# This is a header. This is an *extremely* cool app!"})
+        'About': "Essa é a plataforma de rastreamento do câncer de mama"})
 
 topo = Image.open("topo.png")
 st.image(topo, width=1500, use_column_width=False)
